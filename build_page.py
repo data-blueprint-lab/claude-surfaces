@@ -23,19 +23,28 @@ import re
 import sys
 from pathlib import Path
 
-SRC = Path("claude-code-vs-cowork.html")
-OUT = Path("index.html")
+# Every (source, output) pair this site publishes. Add a row to add a page; the loop
+# below is the only thing that needs to know how many there are.
+PAGES = [
+    (Path("claude-code-vs-cowork.html"), Path("index.html")),
+    (Path("copilot/copilot-vs-claude.html"), Path("copilot/index.html")),
+]
 
 # Pulled out of the source so the tab title and the page title can never disagree.
 TITLE_RE = re.compile(r"<title>(.*?)</title>", re.S)
 
-DESCRIPTION = (
-    "A costed, first-party-sourced comparison of Claude Code and Claude Cowork on "
-    "seats, security and auditability, plus MCP-vs-CLI routes into Microsoft Fabric."
-)
+DESCRIPTIONS = {
+    "Code, Cowork, and Fabric":
+        "A costed, first-party-sourced comparison of Claude Code and Claude Cowork on "
+        "seats, security, retention and auditability, plus MCP-vs-CLI routes into "
+        "Microsoft Fabric.",
+    "Copilot or Claude Code":
+        "Which agent sits in which chair, which budget each one spends, and whether "
+        "GitHub Copilot reaches Microsoft Fabric from VS Code. Cited, dated, first-party.",
+}
 
 
-def build() -> int:
+def build_one(SRC: Path, OUT: Path) -> int:
     if not SRC.exists():
         print(f"error: {SRC} not found", file=sys.stderr)
         return 2
@@ -59,7 +68,7 @@ def build() -> int:
         '<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
         f'<title>{title}</title>\n'
-        f'<meta name="description" content="{DESCRIPTION}">\n'
+        f'<meta name="description" content="{DESCRIPTIONS.get(title, "")}">\n'
         # The palette defines both themes; tell the browser so form controls and
         # scrollbars match rather than staying stubbornly light.
         '<meta name="color-scheme" content="light dark">\n'
@@ -70,11 +79,19 @@ def build() -> int:
         '</html>\n'
     )
 
+    OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(html, encoding="utf-8")
     print(f"wrote {OUT} ({len(html):,} bytes) — title {title!r}")
-    print("  reminder: run check_page.py against the SOURCE, not this file;")
-    print("  the wrapper deliberately adds the tags the source-level check forbids.")
     return 0
+
+
+def build() -> int:
+    rc = 0
+    for src, out in PAGES:
+        rc |= build_one(src, out)
+    print("  reminder: run check_page.py against each SOURCE, not the generated index files;")
+    print("  the wrapper deliberately adds the tags the source-level check forbids.")
+    return rc
 
 
 if __name__ == "__main__":

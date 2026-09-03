@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Copilot or Claude Code</title>
+<meta name="description" content="Which agent sits in which chair, which budget each one spends, and whether GitHub Copilot reaches Microsoft Fabric from VS Code. Cited, dated, first-party.">
+<meta name="color-scheme" content="light dark">
+</head>
+<body>
+<style>
+/* ── Palette: warm editorial. Inherited verbatim from docs/claude-surfaces/ so the two
+   pages read as one set. Light on bare :root, dark redefined twice so an explicit
+   data-theme wins in both directions. Local font stacks only — zero egress. ── */
+:root{
+  --bg:#FBF8F3; --surface:#FFFFFF; --surface-2:#F4EFE7;
+  --ink:#1F1B16; --ink-2:#4A4239; --muted:#6B6259;
+  --line:#E3DACC; --line-2:#CFC3B0;
+  --accent:#B4531F; --accent-soft:#F6E7DC;
+  --teal:#1F5F5B; --teal-soft:#DFEDEB;
+  --gold:#8A6A12; --gold-soft:#F6EED8;
+  --red:#9B2C2C; --red-soft:#F7E4E4;
+  --violet:#5B3A8A; --violet-soft:#EBE3F5;
+  --shadow:0 1px 2px rgba(31,27,22,.06),0 8px 24px rgba(31,27,22,.05);
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --serif:ui-serif,Georgia,Cambria,"Times New Roman",serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#16130F; --surface:#201C17; --surface-2:#282219;
+    --ink:#F2EDE4; --ink-2:#D8D0C4; --muted:#A69C8F;
+    --line:#332C24; --line-2:#4A4034;
+    --accent:#E8834A; --accent-soft:#3A2418;
+    --teal:#5FB8B0; --teal-soft:#12302E;
+    --gold:#D6AE49; --gold-soft:#332A12;
+    --red:#E88080; --red-soft:#3A1E1E;
+    --violet:#B79BE0; --violet-soft:#251A38;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#16130F; --surface:#201C17; --surface-2:#282219;
+  --ink:#F2EDE4; --ink-2:#D8D0C4; --muted:#A69C8F;
+  --line:#332C24; --line-2:#4A4034;
+  --accent:#E8834A; --accent-soft:#3A2418;
+  --teal:#5FB8B0; --teal-soft:#12302E;
+  --gold:#D6AE49; --gold-soft:#332A12;
+  --red:#E88080; --red-soft:#3A1E1E;
+  --violet:#B79BE0; --violet-soft:#251A38;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);
+}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+  font-size:16.5px;line-height:1.68;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+.wrap{max-width:74rem;margin:0 auto;padding:0 1.5rem 6rem}
+
+header{border-bottom:1px solid var(--line);background:var(--surface-2);padding:3.5rem 1.5rem 2.75rem;margin-bottom:2.5rem}
+header .inner{max-width:74rem;margin:0 auto}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 .9rem}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,4.4vw,3.1rem);line-height:1.08;
+  letter-spacing:-.02em;margin:0 0 1rem;max-width:34ch;text-wrap:balance}
+.standfirst{font-size:1.14rem;color:var(--ink-2);max-width:62ch;margin:0 0 1.4rem}
+.meta{display:flex;flex-wrap:wrap;gap:.5rem 1.6rem;font-family:var(--mono);font-size:.76rem;
+  color:var(--muted);border-top:1px solid var(--line-2);padding-top:1.1rem;margin-top:1.5rem}
+.meta b{color:var(--ink-2);font-weight:500}
+
+h2{font-family:var(--serif);font-size:1.9rem;font-weight:600;letter-spacing:-.015em;
+  margin:3.8rem 0 .6rem;padding-top:1.7rem;border-top:1px solid var(--line);text-wrap:balance}
+h2 .num{font-family:var(--mono);font-size:.8rem;color:var(--accent);display:block;
+  letter-spacing:.1em;margin-bottom:.5rem;font-weight:400}
+h3{font-size:1.15rem;font-weight:650;margin:2.3rem 0 .55rem;letter-spacing:-.005em}
+p{margin:0 0 1rem;max-width:70ch}
+ul,ol{margin:0 0 1rem;padding-left:1.3rem;max-width:70ch}
+li{margin-bottom:.45rem}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid var(--accent-soft)}
+a:hover{border-bottom-color:var(--accent)}
+a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+code{font-family:var(--mono);font-size:.855em;background:var(--surface-2);padding:.12em .38em;
+  border-radius:3px;border:1px solid var(--line);overflow-wrap:break-word}
+strong{font-weight:650}
+.lead{font-size:1.05rem;color:var(--ink-2);max-width:66ch}
+
+/* callouts */
+.note{border-left:3px solid var(--accent);background:var(--accent-soft);padding:.95rem 1.15rem;
+  border-radius:0 7px 7px 0;margin:0 0 1.4rem}
+.note.teal{border-left-color:var(--teal);background:var(--teal-soft)}
+.note.warn{border-left-color:var(--red);background:var(--red-soft)}
+.note.gold{border-left-color:var(--gold);background:var(--gold-soft)}
+.note.violet{border-left-color:var(--violet);background:var(--violet-soft)}
+.note p{margin:0;max-width:66ch}
+.note p+p{margin-top:.6rem}
+.note .lbl{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;
+  display:block;margin-bottom:.4rem;opacity:.85;font-weight:600}
+
+/* plain-language definition */
+.plain{background:var(--surface);border:1px solid var(--line);border-radius:9px;
+  padding:.9rem 1.1rem;margin:0 0 1.3rem}
+.plain .t{font-family:var(--mono);font-size:.67rem;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--teal);font-weight:650;display:block;margin-bottom:.35rem}
+.plain p{margin:0;font-size:1rem}
+
+/* "for the implementer" — skippable technical depth */
+.impl{border:1px dashed var(--line-2);border-left:3px solid var(--violet);border-radius:0 8px 8px 0;
+  padding:.85rem 1.1rem;margin:0 0 1.4rem;background:var(--surface)}
+.impl .hd{font-family:var(--mono);font-size:.67rem;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--violet);font-weight:650;margin-bottom:.4rem}
+.impl .hd::before{content:"\2317  "}
+.impl p{margin:0;font-size:.94rem;color:var(--ink-2);max-width:68ch}
+.impl p+p{margin-top:.55rem}
+
+/* tables */
+.tw{overflow-x:auto;margin:0 0 1.5rem;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:34rem;font-size:.87rem}
+th,td{text-align:left;padding:.62rem .85rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font-family:var(--mono);font-size:.7rem;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--muted);font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td code{font-size:.8rem}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.hi td{background:var(--teal-soft)}
+tr.warnrow td{background:var(--red-soft)}
+
+/* figures */
+figure{margin:1.9rem 0 2rem}
+.fig-box{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:1.4rem 1.2rem;overflow-x:auto;box-shadow:var(--shadow)}
+/* Default text colour is set HERE, on the container, so <text> inherits it. Do NOT
+   move it to a `svg text{fill:…}` rule: a CSS rule beats a presentation attribute,
+   so that would silently override every fill="var(--teal)" on an individual <text>. */
+.fig-box svg{display:block;width:100%;height:auto;min-width:40rem;fill:var(--ink)}
+figcaption{font-size:.83rem;color:var(--muted);margin-top:.7rem;max-width:70ch;padding-left:.1rem}
+figcaption b{color:var(--ink-2);font-weight:600}
+svg text{font-family:var(--sans)}
+svg .mono{font-family:var(--mono)}
+svg .lbl-sm{font-size:10px;fill:var(--muted)}
+svg .cap{font-size:9.5px;letter-spacing:.1em;fill:var(--muted);font-family:var(--mono)}
+svg .hd{font-size:9.5px;letter-spacing:.12em;fill:var(--muted);font-family:var(--mono)}
+
+/* pills */
+.pill{display:inline-block;font-family:var(--mono);font-size:.66rem;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;padding:.16em .5em;border-radius:4px;white-space:nowrap;vertical-align:.08em}
+.ga{background:var(--teal-soft);color:var(--teal);border:1px solid var(--teal)}
+.pv{background:var(--gold-soft);color:var(--gold);border:1px solid var(--gold)}
+.beta{background:var(--red-soft);color:var(--red);border:1px solid var(--red)}
+
+/* companion strip */
+.companion{display:flex;flex-wrap:wrap;gap:.5rem 1rem;align-items:baseline;
+  background:var(--surface);border:1px solid var(--line);border-radius:9px;
+  padding:.8rem 1.1rem;margin:0 0 1.4rem;font-size:.9rem}
+.companion .t{font-family:var(--mono);font-size:.67rem;letter-spacing:.11em;
+  text-transform:uppercase;color:var(--teal);font-weight:650}
+
+/* toc */
+.toc{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1.1rem 1.3rem;margin:0 0 1rem}
+.toc .t{font-family:var(--mono);font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.6rem}
+.toc ol{columns:2;column-gap:2.4rem;margin:0;padding-left:1.2rem;font-size:.9rem;max-width:none}
+.toc li{margin-bottom:.28rem}
+@media(max-width:640px){.toc ol{columns:1}}
+
+/* go-deeper reading list */
+.deeper{border-left:3px solid var(--teal);background:var(--surface);border-radius:0 8px 8px 0;
+  padding:.85rem 1.1rem;margin:1.6rem 0 0}
+.deeper .t{font-family:var(--mono);font-size:.67rem;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--teal);font-weight:650;margin-bottom:.5rem}
+.deeper ul{list-style:none;padding:0;margin:0;max-width:none}
+.deeper li{font-size:.87rem;margin-bottom:.4rem;color:var(--ink-2)}
+.deeper .src{font-family:var(--mono);font-size:.63rem;letter-spacing:.06em;text-transform:uppercase;
+  border:1px solid var(--teal);color:var(--teal);border-radius:3px;padding:.1em .4em;margin-right:.45rem}
+
+footer{border-top:1px solid var(--line);margin-top:4rem;padding-top:1.5rem;font-size:.83rem;color:var(--muted)}
+footer p{max-width:70ch}
+footer b{color:var(--ink-2)}
+@media(max-width:640px){
+  body{font-size:16px}
+  header{padding:2.5rem 1.15rem 2rem}
+  .wrap{padding:0 1.15rem 4rem}
+}
+</style>
+
+<header>
+<div class="inner">
+<p class="eyebrow">Agentic tooling · the second vendor</p>
+<h1>Copilot or Claude Code</h1>
+<p class="standfirst">"Copilot" is at least three different products, and Claude models run
+inside one of them. So the choice was never Copilot versus Claude — it is which chair the
+agent sits in, and which budget it spends.</p>
+<div class="meta">
+<span><b>Written</b> 2026-09-03</span>
+<span><b>Statuses</b> verified 2026-09-03 — re-check</span>
+<span><b>Facts basis</b> copilot-vs-claude-research.md</span>
+<span><b>Scenario</b> 12-person Fabric platform team, invented</span>
+</div>
+</div>
+</header>
+
+<div class="wrap">
+
+<div class="companion">
+<span class="t">Companion page</span>
+<span>This page covers the <b>second vendor</b>. For Claude's own two surfaces — Claude Code
+versus Cowork, on cost, retention and governance, plus the two routes into Fabric — read
+<a href="../">Code, Cowork, and Fabric</a> first. It sets up the framing this page extends.</span>
+</div>
+
+<div class="toc">
+<div class="t">On this page — read in order; each section assumes the one before</div>
+<ol>
+<li><a href="#s0">The short answer</a></li>
+<li><a href="#s1">Which Copilot are we talking about?</a></li>
+<li><a href="#s2">Same job, different chair</a></li>
+<li><a href="#s3">Reaching Fabric from VS Code</a></li>
+<li><a href="#s4">Three cost models, and a trap</a></li>
+<li><a href="#s5">What is retained, and by which surface</a></li>
+<li><a href="#s6">Where Copilot is genuinely better</a></li>
+<li><a href="#s7">Where Copilot in Fabric is worse</a></li>
+<li><a href="#s8">What I'd run — and the case against it</a></li>
+</ol>
+</div>
+
+<div class="note gold">
+<span class="lbl">How to read the status markers</span>
+<p><span class="pill ga">GA</span> generally available · <span class="pill pv">Preview</span>
+features and configuration may still change. The Fabric notebook agent is preview, and one
+retention exemption on this page is explicitly time-boxed to the end of 2026. Every price and
+quote traces to a dated first-party source.</p>
+</div>
+
+<h2 id="s0"><span class="num">00</span>The short answer</h2>
+
+<p class="lead">Three things dissolve most of this question before the comparison starts.</p>
+
+<p><strong>"Copilot" is at least three products, and only one is comparable to Claude
+Code.</strong> GitHub Copilot is a coding assistant in your editor. Copilot in Fabric is
+Fabric's own AI, different in each workload, billed to your Fabric capacity. The Microsoft 365,
+Studio and Azure Copilots are something else again. A comparison that doesn't say which is
+comparing nothing.</p>
+
+<p><strong>It is a false choice at the model layer.</strong> Claude models are available
+<em>inside</em> GitHub Copilot — Haiku, Sonnet and Opus across several versions, plus the Fable
+frontier models. The Fabric-specific agent runs on Claude Sonnet 4.5, Claude Opus 4.6, or
+GPT-5.2. You can already be using Claude <em>through</em> Copilot. What you actually choose is
+the <strong>harness</strong>: where the agent sits, what it reaches, and who gets billed.</p>
+
+<p><strong>Yes, Copilot reaches Fabric from VS Code — and for notebooks it is ahead.</strong>
+The Fabric Data Engineering extension browses lakehouses, runs notebooks on remote Spark, and
+edits workspace items in place. On top of it sits a Fabric-aware agent inside Copilot Chat that
+knows the <code>spark</code> session variable and Fabric's lakehouse path conventions. Claude
+Code has no Fabric awareness at all; it reaches Fabric through the Model Context Protocol (MCP)
+or the <code>fab</code> CLI, as the companion page describes.</p>
+
+<div class="note teal">
+<span class="lbl">The recommendation in four sentences</span>
+<p>Run both, with roles: <strong>Copilot in the editor</strong> for notebook authoring, where
+its Fabric integration is a real advantage, and <strong>Claude Code in the terminal</strong>
+for anything scripted, cross-repo or CLI-driven. The hard decision is neither of those — it is
+whether to enable <strong>Copilot in Fabric</strong>, which spends your data platform's compute
+budget and can throttle your own pipelines. Decide that one on cross-geo data processing and
+capacity isolation, not on output quality. And if you enable it, isolate its capacity first.</p>
+</div>
+
+<h2 id="s1"><span class="num">01</span>Which Copilot are we talking about?</h2>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 880 340" role="img" aria-label="One brand, three products, three billing paths. GitHub Copilot is a coding assistant in the editor paid by seat and pooled credits. Copilot in Fabric is Fabric's own per-workload AI paid from your Fabric capacity, and it is the only one that can throttle production. The Microsoft 365, Studio and Azure Copilots are not developer tooling and are out of scope.">
+  <defs><marker id="c1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+    <path d="M0,1 L9,5 L0,9 z" fill="var(--muted)"/></marker></defs>
+
+  <text x="16" y="18" class="hd">ONE BRAND</text>
+  <text x="230" y="18" class="hd">THREE PRODUCTS</text>
+  <text x="560" y="18" class="hd">THREE BILLING PATHS</text>
+
+  <rect x="16" y="130" width="170" height="64" rx="9" fill="var(--surface-2)" stroke="var(--line-2)"/>
+  <text x="101" y="158" text-anchor="middle" font-size="13" font-weight="650">"Copilot"</text>
+  <text x="101" y="176" text-anchor="middle" class="lbl-sm">one word, three things</text>
+
+  <rect x="230" y="40" width="280" height="80" rx="6" fill="var(--surface)" stroke="var(--teal)"/>
+  <text x="370" y="66" text-anchor="middle" font-size="13" font-weight="650" fill="var(--teal)">GitHub Copilot</text>
+  <text x="370" y="86" text-anchor="middle" class="lbl-sm">coding assistant, in the editor</text>
+  <text x="370" y="106" text-anchor="middle" class="lbl-sm">comparable to Claude Code</text>
+
+  <rect x="230" y="136" width="280" height="80" rx="6" fill="var(--surface)" stroke="var(--gold)"/>
+  <text x="370" y="162" text-anchor="middle" font-size="13" font-weight="650" fill="var(--gold)">Copilot in Fabric</text>
+  <text x="370" y="182" text-anchor="middle" class="lbl-sm">Fabric's own AI, one per workload</text>
+  <text x="370" y="202" text-anchor="middle" class="lbl-sm">a different layer entirely</text>
+
+  <rect x="230" y="232" width="280" height="64" rx="6" fill="var(--surface-2)" stroke="var(--muted)" stroke-dasharray="5 3"/>
+  <text x="370" y="258" text-anchor="middle" font-size="12.5" fill="var(--ink-2)">M365 · Studio · Azure Copilot</text>
+  <text x="370" y="278" text-anchor="middle" class="lbl-sm">not developer tooling — out of scope</text>
+
+  <line x1="190" y1="150" x2="224" y2="86" stroke="var(--muted)" marker-end="url(#c1)"/>
+  <line x1="190" y1="162" x2="224" y2="176" stroke="var(--muted)" marker-end="url(#c1)"/>
+  <line x1="190" y1="176" x2="224" y2="262" stroke="var(--muted)" marker-end="url(#c1)"/>
+
+  <rect x="560" y="40" width="304" height="80" rx="6" fill="var(--teal-soft)" stroke="var(--teal)"/>
+  <text x="712" y="66" text-anchor="middle" font-size="12.5">seat + pooled credits</text>
+  <text x="712" y="86" text-anchor="middle" class="lbl-sm">$19 or $39 per user · completions free</text>
+  <text x="712" y="106" text-anchor="middle" class="lbl-sm">cannot touch production</text>
+
+  <rect x="560" y="136" width="304" height="80" rx="6" fill="var(--red-soft)" stroke="var(--red)"/>
+  <text x="712" y="162" text-anchor="middle" font-size="12.5" fill="var(--red)">your Fabric capacity</text>
+  <text x="712" y="182" text-anchor="middle" class="lbl-sm">no seat — it spends capacity units</text>
+  <text x="712" y="202" text-anchor="middle" class="lbl-sm">CAN throttle your pipelines</text>
+
+  <rect x="560" y="232" width="304" height="64" rx="6" fill="var(--surface-2)" stroke="var(--muted)" stroke-dasharray="5 3"/>
+  <text x="712" y="266" text-anchor="middle" class="lbl-sm">per-user licences, elsewhere in the estate</text>
+
+  <line x1="514" y1="80" x2="554" y2="80" stroke="var(--muted)" marker-end="url(#c1)"/>
+  <line x1="514" y1="176" x2="554" y2="176" stroke="var(--muted)" marker-end="url(#c1)"/>
+  <line x1="514" y1="264" x2="554" y2="264" stroke="var(--muted)" marker-end="url(#c1)"/>
+
+  <text x="16" y="322" font-size="12.5" fill="var(--ink-2)">The useful question is never "do we have Copilot" — it is "which one, and on whose capacity?"</text>
+</svg>
+</div>
+<figcaption><b>One brand, three products, three budgets.</b> Only the top row competes with
+Claude Code. Only the middle row can degrade your production workloads, because it is the only
+one that spends the same compute your pipelines run on.</figcaption>
+</figure>
+
+<div class="tw">
+<table>
+<thead><tr><th></th><th>GitHub Copilot</th><th>Copilot in Fabric</th></tr></thead>
+<tbody>
+<tr><td><b>What it is</b></td><td>Coding assistant: completions, chat, agent mode</td><td>Fabric's own AI, separate per workload</td></tr>
+<tr><td><b>Where it runs</b></td><td>VS Code, on your machine</td><td>Inside the Fabric service</td></tr>
+<tr><td><b>Who pays</b></td><td>Per-user seat + pooled credits</td><td><b>Your Fabric capacity</b></td></tr>
+<tr><td><b>Comparable to Claude Code?</b></td><td>Yes — same job, different chair</td><td>No — a different layer</td></tr>
+<tr class="warnrow"><td><b>Can throttle your pipelines?</b></td><td>No</td><td><b>Yes</b></td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="s2"><span class="num">02</span>Same job, different chair</h2>
+
+<p>GitHub Copilot's agent mode and Claude Code have converged much more than the marketing
+suggests. Both read a codebase, edit across many files, run terminal commands, react to test
+failures in a loop, and speak the Model Context Protocol.</p>
+
+<div class="plain">
+<span class="t">In plain terms</span>
+<p>Think of it as <strong>where you sit</strong>. Claude Code sits in the terminal, so it is
+good at things that look like commands and pipelines. Copilot sits in the editor, so it is good
+at things that look like the file you are already staring at. Both can now do the other's job —
+just less well.</p>
+</div>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 880 320" role="img" aria-label="The two tools overlap heavily in the middle: both do multi-file edits, run commands, react to failures and speak the Model Context Protocol. Claude Code alone offers the terminal, headless scripted runs and driving arbitrary command line tools. GitHub Copilot alone offers living in the editor, a Fabric-aware agent, unlimited free completions and a choice of model vendors.">
+  <text x="16" y="18" class="hd">ONLY CLAUDE CODE</text>
+  <text x="298" y="18" class="hd">BOTH, AS OF TODAY</text>
+  <text x="614" y="18" class="hd">ONLY GITHUB COPILOT</text>
+
+  <rect x="16" y="32" width="250" height="192" rx="9" fill="var(--surface)" stroke="var(--teal)"/>
+  <text x="141" y="62" text-anchor="middle" font-size="12.5">the terminal</text>
+  <text x="141" y="88" text-anchor="middle" font-size="12.5">headless and scripted runs</text>
+  <text x="141" y="114" text-anchor="middle" font-size="12.5">drives any command-line tool</text>
+  <text x="141" y="140" text-anchor="middle" font-size="12.5">works outside any editor</text>
+  <text x="141" y="176" text-anchor="middle" class="cap" fill="var(--teal)">GOOD AT</text>
+  <text x="141" y="198" text-anchor="middle" class="lbl-sm">pipelines, many repos, automation</text>
+
+  <rect x="298" y="32" width="284" height="192" rx="9" fill="var(--surface-2)" stroke="var(--line-2)"/>
+  <text x="440" y="62" text-anchor="middle" font-size="12.5">edits across many files</text>
+  <text x="440" y="88" text-anchor="middle" font-size="12.5">runs terminal commands</text>
+  <text x="440" y="114" text-anchor="middle" font-size="12.5">reacts to test failures in a loop</text>
+  <text x="440" y="140" text-anchor="middle" font-size="12.5">speaks Model Context Protocol</text>
+  <text x="440" y="176" text-anchor="middle" class="cap">THE CONVERGED MIDDLE</text>
+  <text x="440" y="198" text-anchor="middle" class="lbl-sm">bigger than the marketing implies</text>
+
+  <rect x="614" y="32" width="250" height="192" rx="9" fill="var(--surface)" stroke="var(--gold)"/>
+  <text x="739" y="62" text-anchor="middle" font-size="12.5">lives where you edit</text>
+  <text x="739" y="88" text-anchor="middle" font-size="12.5">a Fabric-aware agent</text>
+  <text x="739" y="114" text-anchor="middle" font-size="12.5">completions free and unlimited</text>
+  <text x="739" y="140" text-anchor="middle" font-size="12.5">Claude, OpenAI, and more</text>
+  <text x="739" y="176" text-anchor="middle" class="cap" fill="var(--gold)">GOOD AT</text>
+  <text x="739" y="198" text-anchor="middle" class="lbl-sm">the notebook or file in front of you</text>
+
+  <text x="16" y="260" class="cap">THE PRACTICAL READ</text>
+  <text x="16" y="282" font-size="12.5" fill="var(--ink-2)">If the work is "author and debug this notebook", the editor wins.</text>
+  <text x="16" y="302" font-size="12.5" fill="var(--ink-2)">If it is "do this across six repos, then run it on a schedule", the terminal wins.</text>
+</svg>
+</div>
+<figcaption><b>The overlap is the story.</b> Most of what people compare these two on is now
+in the middle column. The wings — a real terminal on one side, a Fabric-aware editor agent and
+free completions on the other — are what actually differ.</figcaption>
+</figure>
+
+<h2 id="s3"><span class="num">03</span>Reaching Fabric from VS Code</h2>
+
+<p>This is the part that surprised me, and it is a genuine point for Copilot.</p>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 880 350" role="img" aria-label="Two layers. On top, inside GitHub Copilot Chat, a Fabric notebook custom agent in preview that only runs in local session type and requires one of three specific base models. Underneath, the Fabric Data Engineering extension offers local mode or virtual file system mode, reaching Fabric workspaces and lakehouses and running notebooks on remote Spark compute.">
+  <defs><marker id="c3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+    <path d="M0,1 L9,5 L0,9 z" fill="var(--muted)"/></marker></defs>
+
+  <text x="16" y="18" class="hd">LAYER 1 — INSIDE GITHUB COPILOT CHAT</text>
+
+  <rect x="16" y="32" width="240" height="76" rx="6" fill="var(--surface)" stroke="var(--line-2)"/>
+  <text x="136" y="58" text-anchor="middle" font-size="12.5">GitHub Copilot Chat</text>
+  <text x="136" y="78" text-anchor="middle" class="lbl-sm">session type: Local only</text>
+  <text x="136" y="96" text-anchor="middle" class="lbl-sm">Background and Cloud unsupported</text>
+
+  <rect x="296" y="32" width="250" height="76" rx="6" fill="var(--gold-soft)" stroke="var(--gold)"/>
+  <text x="304" y="46" class="cap" fill="var(--gold)">PREVIEW</text>
+  <text x="421" y="60" text-anchor="middle" font-size="12.5" font-weight="650" fill="var(--gold)">FabricNotebook agent</text>
+  <text x="421" y="78" text-anchor="middle" class="lbl-sm">knows the built-in spark session</text>
+  <text x="421" y="96" text-anchor="middle" class="lbl-sm">knows default vs ABFSS lakehouse paths</text>
+
+  <rect x="586" y="32" width="278" height="76" rx="6" fill="var(--surface)" stroke="var(--violet)"/>
+  <text x="725" y="56" text-anchor="middle" font-size="12.5" fill="var(--violet)">one of three base models</text>
+  <text x="725" y="74" text-anchor="middle" class="lbl-sm">Claude Sonnet 4.5 · Claude Opus 4.6</text>
+  <text x="725" y="92" text-anchor="middle" class="lbl-sm">or GPT-5.2</text>
+
+  <line x1="260" y1="70" x2="290" y2="70" stroke="var(--muted)" marker-end="url(#c3)"/>
+  <line x1="550" y1="70" x2="580" y2="70" stroke="var(--muted)" marker-end="url(#c3)"/>
+
+  <text x="16" y="146" class="hd">LAYER 2 — AND UNDERNEATH IT, THE EXTENSION</text>
+
+  <rect x="16" y="182" width="220" height="68" rx="6" fill="var(--surface-2)" stroke="var(--line-2)"/>
+  <text x="126" y="210" text-anchor="middle" font-size="12.5">Fabric Data Engineering</text>
+  <text x="126" y="230" text-anchor="middle" class="lbl-sm">VS Code extension</text>
+
+  <rect x="276" y="158" width="200" height="54" rx="6" fill="var(--surface)" stroke="var(--line-2)"/>
+  <text x="376" y="180" text-anchor="middle" font-size="12">Local mode</text>
+  <text x="376" y="198" text-anchor="middle" class="lbl-sm">download, edit, sync back</text>
+
+  <rect x="276" y="224" width="200" height="54" rx="6" fill="var(--teal-soft)" stroke="var(--teal)"/>
+  <text x="376" y="246" text-anchor="middle" font-size="12" fill="var(--teal)">VFS mode</text>
+  <text x="376" y="264" text-anchor="middle" class="lbl-sm">edit remote items in place</text>
+
+  <line x1="240" y1="204" x2="270" y2="186" stroke="var(--muted)" marker-end="url(#c3)"/>
+  <line x1="240" y1="226" x2="270" y2="248" stroke="var(--muted)" marker-end="url(#c3)"/>
+
+  <rect x="516" y="182" width="176" height="68" rx="6" fill="var(--violet-soft)" stroke="var(--violet)"/>
+  <text x="604" y="208" text-anchor="middle" font-size="12.5" fill="var(--violet)">Microsoft Fabric</text>
+  <text x="604" y="228" text-anchor="middle" class="lbl-sm">workspaces · lakehouses</text>
+
+  <rect x="716" y="182" width="148" height="68" rx="6" fill="var(--surface)" stroke="var(--line-2)"/>
+  <text x="790" y="208" text-anchor="middle" font-size="12">remote Spark</text>
+  <text x="790" y="228" text-anchor="middle" class="lbl-sm">runtime 1.3+ kernel</text>
+
+  <line x1="480" y1="186" x2="510" y2="204" stroke="var(--muted)" marker-end="url(#c3)"/>
+  <line x1="480" y1="248" x2="510" y2="228" stroke="var(--muted)" marker-end="url(#c3)"/>
+  <line x1="696" y1="216" x2="710" y2="216" stroke="var(--muted)" marker-end="url(#c3)"/>
+
+  <text x="16" y="304" class="cap" fill="var(--gold)">WHAT CLAUDE CODE HAS NO EQUIVALENT FOR</text>
+  <text x="16" y="326" font-size="12.5" fill="var(--ink-2)">Nothing on the Claude side knows what a default lakehouse is. For notebook work, that gap is the whole argument.</text>
+</svg>
+</div>
+<figcaption><b>Two layers, and the top one is the differentiator.</b> The extension alone is
+useful plumbing. The Fabric-aware agent sitting on it — knowing the live Spark session and the
+lakehouse path conventions — is the thing Claude Code cannot match today. Note it is preview,
+and locked to Local sessions.</figcaption>
+</figure>
+
+<h3>What the extension gives you</h3>
+
+<ul>
+<li><strong>Workspaces</strong> — manage one or several from the editor</li>
+<li><strong>Lakehouses</strong> — browse tables and files, preview data, copy paths for your code</li>
+<li><strong>Notebooks</strong> — create, edit and run, locally or on <strong>remote Spark compute</strong></li>
+<li><strong>Spark job definitions</strong> — full create, read, update, delete</li>
+<li><strong>Environments</strong> — inspect hardware profiles, libraries, Spark configuration</li>
+</ul>
+
+<div class="impl">
+<div class="hd">For the implementer — modes, kernels and containers</div>
+<p><strong>Local mode</strong> downloads items, you edit locally and sync back.
+<strong>VFS mode</strong> is a virtual file system: edit remote Fabric items with no download,
+several workspaces in one window, changes syncing on save. Open it from the Fabric portal via
+"Open In VS Code (Desktop)".</p>
+<p>For runtime <strong>1.3 and higher</strong> no local conda environment is created — you pick
+a Microsoft Fabric Runtime kernel and the notebook executes on remote Spark. That is the right
+choice when your code has hard remote dependencies; <code>MSSparkUtils</code> and
+<code>NotebookUtils</code> only exist there. Local conda still earns its keep for working
+disconnected, or testing a library before you upload it. Microsoft also publishes a
+dev-container image on its Artifact Registry with JDK, Conda and Jupyter preinstalled, if you
+would rather none of this touched your machine.</p>
+</div>
+
+<div class="note violet">
+<span class="lbl">Note what this implies</span>
+<p>The Fabric-native agent in Microsoft's own tooling runs on <strong>Claude</strong> models.
+If you were choosing between "Copilot" and "Claude" as rival brains, the premise does not
+survive contact with the documentation. The competition is between harnesses, not models.</p>
+</div>
+
+<h2 id="s4"><span class="num">04</span>Three cost models, and a trap</h2>
+
+<figure>
+<div class="fig-box">
+<svg viewBox="0 0 880 350" role="img" aria-label="Three funding paths. A Claude seat funds a per-member usage pool that reaches nothing else. A Copilot seat funds a shared organisation credit pool that also reaches nothing else. Copilot in Fabric has no seat and spends capacity units from the same Fabric capacity that runs your production pipelines and reports, so it is the only path that can degrade production.">
+  <defs><marker id="c4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+    <path d="M0,1 L9,5 L0,9 z" fill="var(--muted)"/></marker>
+    <marker id="c4r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+    <path d="M0,1 L9,5 L0,9 z" fill="var(--red)"/></marker></defs>
+
+  <text x="16" y="18" class="hd">CLAUDE TEAM</text>
+  <text x="306" y="18" class="hd">GITHUB COPILOT</text>
+  <text x="596" y="18" class="hd">COPILOT IN FABRIC</text>
+
+  <rect x="16" y="32" width="270" height="58" rx="6" fill="var(--surface)" stroke="var(--line-2)"/>
+  <text x="151" y="56" text-anchor="middle" font-size="12.5">a per-user seat</text>
+  <text x="151" y="76" text-anchor="middle" class="lbl-sm">$20-25, or $100-125 premium</text>
+
+  <rect x="306" y="32" width="270" height="58" rx="6" fill="var(--surface)" stroke="var(--line-2)"/>
+  <text x="441" y="56" text-anchor="middle" font-size="12.5">a per-user seat</text>
+  <text x="441" y="76" text-anchor="middle" class="lbl-sm">$19 Business · $39 Enterprise</text>
+
+  <rect x="596" y="32" width="268" height="58" rx="6" fill="var(--red-soft)" stroke="var(--red)"/>
+  <text x="730" y="56" text-anchor="middle" font-size="12.5" fill="var(--red)">no seat at all</text>
+  <text x="730" y="76" text-anchor="middle" class="lbl-sm">nothing to buy, nothing to cap</text>
+
+  <line x1="151" y1="94" x2="151" y2="118" stroke="var(--muted)" marker-end="url(#c4)"/>
+  <line x1="441" y1="94" x2="441" y2="118" stroke="var(--muted)" marker-end="url(#c4)"/>
+  <line x1="730" y1="94" x2="730" y2="118" stroke="var(--red)" marker-end="url(#c4r)"/>
+
+  <rect x="16" y="122" width="270" height="58" rx="6" fill="var(--teal-soft)" stroke="var(--teal)"/>
+  <text x="151" y="146" text-anchor="middle" font-size="12.5" fill="var(--teal)">a per-member pool</text>
+  <text x="151" y="166" text-anchor="middle" class="lbl-sm">one person cannot drain another</text>
+
+  <rect x="306" y="122" width="270" height="58" rx="6" fill="var(--teal-soft)" stroke="var(--teal)"/>
+  <text x="441" y="146" text-anchor="middle" font-size="12.5" fill="var(--teal)">a shared org credit pool</text>
+  <text x="441" y="166" text-anchor="middle" class="lbl-sm">completions free and unmetered</text>
+
+  <rect x="596" y="122" width="268" height="58" rx="6" fill="var(--red-soft)" stroke="var(--red)"/>
+  <text x="730" y="146" text-anchor="middle" font-size="12.5" fill="var(--red)">your Fabric capacity</text>
+  <text x="730" y="166" text-anchor="middle" class="lbl-sm">capacity units, F2+ or P1+</text>
+
+  <line x1="151" y1="184" x2="151" y2="208" stroke="var(--muted)" marker-end="url(#c4)"/>
+  <line x1="441" y1="184" x2="441" y2="208" stroke="var(--muted)" marker-end="url(#c4)"/>
+  <line x1="730" y1="184" x2="730" y2="208" stroke="var(--red)" marker-end="url(#c4r)"/>
+
+  <rect x="16" y="212" width="270" height="58" rx="6" fill="var(--surface)" stroke="var(--line-2)"/>
+  <text x="151" y="244" text-anchor="middle" font-size="12.5">reaches nothing else</text>
+
+  <rect x="306" y="212" width="270" height="58" rx="6" fill="var(--surface)" stroke="var(--line-2)"/>
+  <text x="441" y="244" text-anchor="middle" font-size="12.5">reaches nothing else</text>
+
+  <rect x="596" y="212" width="268" height="58" rx="6" fill="var(--red-soft)" stroke="var(--red)"/>
+  <text x="730" y="238" text-anchor="middle" font-size="12.5" font-weight="650" fill="var(--red)">your pipelines and reports</text>
+  <text x="730" y="258" text-anchor="middle" class="lbl-sm">same capacity — throttling is documented</text>
+
+  <text x="16" y="304" class="cap" fill="var(--red)">THE ASYMMETRY THAT MATTERS</text>
+  <text x="16" y="326" font-size="12.5" fill="var(--ink-2)">Two of these spend a software budget. The third spends your platform's compute, and Microsoft's own fix is to buy a second capacity.</text>
+</svg>
+</div>
+<figcaption><b>Follow the money down each column.</b> The left two columns terminate
+harmlessly. The right one terminates in your production estate — which is why Microsoft
+documents a split-capacity strategy, and notes that it "produces higher cost".</figcaption>
+</figure>
+
+<div class="tw">
+<table>
+<thead><tr><th></th><th>How you pay</th><th>Whose budget</th></tr></thead>
+<tbody>
+<tr><td><b>Claude Team</b></td><td>$20–25/seat standard, $100–125 premium. Usage pool is <b>per member</b></td><td>Software subscription</td></tr>
+<tr><td><b>GitHub Copilot</b></td><td>Business <b>$19</b>/user (1,900 AI credits), Enterprise <b>$39</b>/user (3,900). Credits pool at <b>enterprise level</b>; overage <b>$0.01/credit</b>. Completions unbilled and unlimited</td><td>Software subscription</td></tr>
+<tr class="warnrow"><td><b>Copilot in Fabric</b></td><td><b>No seat.</b> Spends <b>capacity units</b> on your F2+/P1+ capacity. Token consumption drives billing</td><td><b>Your data platform's compute</b></td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Three observations that change decisions:</p>
+
+<ul>
+<li><strong>Claude's pool is per person; Copilot's is pooled across the organisation.</strong>
+Opposite designs with opposite failure modes. With Claude a heavy user cannot drain a
+colleague; with Copilot they can, but light users subsidise heavy ones. For a team of a dozen,
+pooling is usually the better deal, and it removes the per-person upgrade decision
+entirely.</li>
+<li><strong>Completions are free on Copilot, and that is not small.</strong> The unlimited,
+unbilled part is the part developers touch most. Credits only start moving in chat and agent
+mode.</li>
+<li><strong>Copilot in Fabric competes with your production workloads.</strong> Microsoft is
+explicit that overconsumption "can lead to throttling and disruption of your other Fabric
+operations."</li>
+</ul>
+
+<div class="impl">
+<div class="hd">For the implementer — measure it before you budget it</div>
+<p>Copilot in Fabric consumption appears in the Fabric Capacity Metrics app in capacity units,
+filtered to the "Copilot in Fabric" operation, with a 30-day item-history breakdown. Microsoft
+processes it deliberately as a <em>background</em> operation to smooth demand rather than let it
+spike. Downstream work it triggers — DAX queries, refreshes, subscriptions — bills separately
+through the normal paths.</p>
+<p>If you need isolation: a <strong>Fabric Copilot Capacity</strong> is billed only for Copilot
+consumption, with downstream operations still charged to the item's own capacity. It must be
+F2/P1 or higher, is supported only in the tenant's home region, allows one per user, and does
+not support Fabric AI functions. The heavier alternative Microsoft documents is a
+split-capacity strategy — Copilot alone on a separate F64-or-higher SKU.</p>
+</div>
+
+<h2 id="s5"><span class="num">05</span>What is retained, and by which surface</h2>
+
+<p>Both vendors have surface-dependent retention, and summaries of both flatten it. The
+companion page covers Claude in detail; here is Copilot, then the comparison.</p>
+
+<h3>GitHub Copilot</h3>
+
+<ul>
+<li><strong>The model-hosting layer runs under zero-retention agreements.</strong> OpenAI models
+are hosted by OpenAI and GitHub's Azure infrastructure with a zero data retention (ZDR)
+agreement in place. Microsoft's own models run on Azure in GitHub's tenant. Open-weight models
+are covered by zero-retention agreements with their hosting providers — one of which is a third
+party, Fireworks AI.</li>
+<li><strong>Copilot Chat messages are kept 28 days</strong>, then permanently deleted. On
+Business and Enterprise, <strong>memories can be viewed and deleted by an administrator</strong>.</li>
+<li><strong>No training on Business or Enterprise data.</strong> On individual plans — Free,
+Pro, Pro+, Max — GitHub <em>may</em> use prompts, suggestions and code snippets to train, with
+an opt-out.</li>
+</ul>
+
+<div class="note warn">
+<span class="lbl">The model picker is a retention control, and almost nobody treats it as one</span>
+<p>Per GitHub's own documentation: when Claude <strong>Fable 5 or Fable 5.1</strong> is used,
+"Anthropic retains data, including prompts and outputs, <strong>by default</strong> to operate
+safety classifiers that detect harmful use." A time-boxed zero-retention exemption is available
+<strong>through the end of 2026</strong> while Anthropic rolls out Enterprise Frontier
+Safeguards; after that, continued use requires them. Eligibility runs through your GitHub
+account team, and an administrator must still enable each model individually.</p>
+<p><strong>Every other Claude model in Copilot stays under zero retention.</strong> So on
+Copilot, picking a frontier model from a dropdown can change your retention posture — quietly,
+and without touching a policy page.</p>
+</div>
+
+<h3>How the two land side by side</h3>
+
+<div class="tw">
+<table>
+<thead><tr><th></th><th>GitHub Copilot</th><th>Claude Code</th></tr></thead>
+<tbody>
+<tr><td><b>Training on commercial data</b></td><td>No</td><td>No</td></tr>
+<tr><td><b>Training on consumer plans</b></td><td>May, with opt-out</td><td>May, with opt-out</td></tr>
+<tr><td><b>Hosting-layer retention</b></td><td>Zero-retention agreements per model provider</td><td>30-day default; zero retention is Enterprise-only and negotiated</td></tr>
+<tr><td><b>Chat / session history</b></td><td>28 days; an admin can view and delete memories</td><td>Saved sessions until deleted; local Cowork sessions not admin-manageable</td></tr>
+<tr class="hi"><td><b>Does model choice change retention?</b></td><td><b>Yes</b> — Fable models retain by default</td><td><b>Yes</b> — the same constraint, described from the other side</td></tr>
+<tr><td><b>Where inference happens</b></td><td>Per model: OpenAI, GitHub's Azure tenant, Azure AI Foundry, or a third-party host</td><td>Anthropic's API, or a chosen cloud provider</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>On one specific control, <strong>Copilot is ahead</strong>: an administrator can view and
+delete Copilot memories. Claude Cowork's local session history cannot be centrally managed or
+exported, and has no deletion endpoint yet.</p>
+
+<div class="deeper">
+<div class="t">Go deeper</div>
+<ul>
+<li><span class="src">First-party</span><a href="https://docs.github.com/en/copilot/reference/ai-models/model-hosting">Hosting of models for GitHub Copilot</a> — which provider hosts which model, the retention agreements, and the Fable warning quoted above. The single most useful page if residency matters to you.</li>
+<li><span class="src">First-party</span><a href="https://docs.github.com/en/copilot/reference/copilot-billing/models-and-pricing">Models and pricing for GitHub Copilot</a> — per-token rates and the credit mechanics.</li>
+<li><span class="src">First-party</span><a href="https://www.anthropic.com/legal/commercial-terms">Anthropic Commercial Terms of Service</a> — §K.1 is the indemnity clause discussed in section 06; §M.7.b names the European contracting entity and venue.</li>
+</ul>
+</div>
+
+<h2 id="s6"><span class="num">06</span>Where Copilot is genuinely better</h2>
+
+<p>Stated plainly, because a comparison written by a Claude Code user should be suspected of
+bias.</p>
+
+<ul>
+<li><strong>The Fabric-native notebook agent.</strong> Nothing on the Claude side knows what a
+default lakehouse is. Preview status notwithstanding, this is a real advantage for notebook
+work.</li>
+<li><strong>VFS mode and the remote Spark kernel.</strong> Editing workspace items in place and
+executing on remote compute, from the editor, with no sync dance.</li>
+<li><strong>Completions are unlimited and unbilled</strong> on every paid plan — the
+most-used feature costs nothing per use.</li>
+<li><strong>Pooled credits suit a small team.</strong> No per-person allowance to manage and no
+upgrade decision per head.</li>
+<li><strong>Admin-managed memory.</strong> Viewable and deletable by an administrator, which is
+a control Claude's local Cowork sessions lack.</li>
+<li><strong>Content exclusion.</strong> Administrators can define paths and repositories
+Copilot may not read as context — worth verifying against your own tenant rather than taking
+from a summary, including this one.</li>
+<li><strong>Model breadth with disclosed hosting.</strong> Claude, OpenAI, Microsoft and
+open-weight models behind one seat, and a public page saying where each one runs.</li>
+</ul>
+
+<div class="note">
+<span class="lbl">A claim I had wrong, and the correction matters</span>
+<p>I initially said Copilot held an intellectual-property indemnity advantage. <strong>It does
+not.</strong> Anthropic's Commercial Terms §K.1 commit Anthropic to defend the customer and
+indemnify judgments on third-party claims that paid use of the Services "or Outputs generated
+through such authorized use violates any third-party intellectual property right." GitHub and
+Microsoft make a comparable commitment for Business and Enterprise.</p>
+<p><strong>Both vendors indemnify.</strong> Each attaches conditions — GitHub's is generally
+tied to keeping duplication filters enabled, Anthropic's to use being in accordance with the
+Terms. Read your own contract; do not take this from a comparison table. One detail for a
+European entity: Anthropic contracts through Anthropic Ireland, Limited for customers in the
+EEA, Switzerland and the UK, with venue in the courts of Ireland.</p>
+</div>
+
+<h2 id="s7"><span class="num">07</span>Where Copilot in Fabric is worse</h2>
+
+<p>These are about Copilot <strong>in Fabric</strong>, not GitHub Copilot. They are the reason
+this is a decision rather than a default.</p>
+
+<div class="tw">
+<table>
+<thead><tr><th>Constraint</th><th>What it means for you</th></tr></thead>
+<tbody>
+<tr class="warnrow"><td><b>Cross-geo processing</b></td><td>If your capacity sits where Azure OpenAI is not natively available, Copilot does not work until an admin enables a tenant setting whose own description is that data "can be processed <b>outside your capacity's geographic region, compliance boundary, or national cloud instance</b>." If residency is part of your architecture, this line decides it</td></tr>
+<tr><td><b>No Private Link</b></td><td>Not supported for Private Link or closed network environments</td></tr>
+<tr><td><b>No sovereign clouds</b></td><td>Not supported, on GPU-availability grounds</td></tr>
+<tr><td><b>Paid capacity + tenant toggle</b></td><td>F2+ or P1+, plus an admin enabling it. Trial-capacity support <b>differs by workload</b> — the Data Engineering and Data Science docs list trial capacities as supported; the Power BI docs say trial SKUs are not. Confirm for the workload you actually intend to use</td></tr>
+<tr><td><b>Region availability</b></td><td>Limited independently of everything above</td></tr>
+<tr class="warnrow"><td><b>It can throttle production</b></td><td>Per section 04, and Microsoft's own mitigation is buying a second capacity</td></tr>
+</tbody>
+</table>
+</div>
+
+<div class="note teal">
+<span class="lbl">The honest summary</span>
+<p>GitHub Copilot's governance story is good, and in places better than Claude's. Copilot in
+Fabric's is the weakest of the three surfaces on this page — not because Microsoft built it
+badly, but because it runs inside a shared capacity and may need to route data outside your
+compliance boundary in order to work at all.</p>
+</div>
+
+<h2 id="s8"><span class="num">08</span>What I'd run — and the case against it</h2>
+
+<h3>The recommendation</h3>
+
+<p><strong>Run both, with roles.</strong></p>
+
+<p><strong>GitHub Copilot in VS Code</strong> for notebook and in-editor work. The Fabric
+extension plus the Fabric-aware agent is the best notebook-authoring setup available to a
+Fabric team today, and Business at $19/user with pooled credits and free completions is good
+value for a dozen people.</p>
+
+<p><strong>Claude Code in the terminal</strong> for everything scripted, cross-repo, CLI-driven
+or unattended — including the <code>fab</code> route into Fabric from the companion page.</p>
+
+<p><strong>Copilot in Fabric: decide deliberately, and probably not yet.</strong> If you need
+the cross-geo setting enabled for it to work at all, that is a data-residency decision rather
+than a tooling one, and it belongs with whoever owns your compliance posture. If you do enable
+it, isolate the capacity first so it cannot throttle your pipelines.</p>
+
+<p>Whichever you run, the rule from the companion page still holds and is not vendor-specific:
+<strong>don't point any of them at production data</strong>, and keep a named human in the
+audit log rather than a shared service principal.</p>
+
+<h3>The case against all of that</h3>
+
+<div class="note violet">
+<span class="lbl">Steel-manning the opposite position</span>
+<p><strong>Running both is how tool sprawl gets justified.</strong> Two agent subscriptions is
+$39–120 per person per month for heavily overlapping capability, plus two sets of permissions,
+two audit trails, two vendors to track, and a team that has to remember which tool to reach
+for. "Use the right tool for the job" is the argument every organisation makes on the way to
+paying for five things that each do 80% of the same work. One tool used well usually beats two
+used casually.</p>
+<p><strong>And my Fabric caution may be miscalibrated.</strong> I am recommending against
+Copilot in Fabric largely on cross-geo processing — but if your capacity sits in a region where
+Azure OpenAI <em>is</em> natively available, that setting never comes up and the objection
+evaporates. I have not checked which regions those are for your tenant. Treat my caution as a
+question to answer, not a conclusion to adopt.</p>
+</div>
+
+<p><strong>Where I land, and why.</strong> If forced to pick one for a twelve-person Fabric
+team, I would pick <strong>GitHub Copilot</strong> — not because it is the better agent, but
+because the Fabric-native integration, the free completions and the pooled credits fit that
+team's actual shape, and notebook work is the bulk of the job. I would expect to miss Claude
+Code's terminal within a month, which is exactly why the two-tool answer keeps winning on
+reflection.</p>
+
+<footer>
+<p><b>Facts basis.</b> Every claim on this page traces to a numbered, dated source in
+<code>copilot-vs-claude-research.md</code>, alongside this file. Prices are US list, excluding
+tax, and subject to change.</p>
+
+<p><b>Corrections recorded here.</b> Two of my own claims were wrong before verification: that
+Copilot held an IP-indemnity advantage — both vendors indemnify — and that Copilot "retains
+nothing", when in fact the hosting layer runs under zero-retention agreements, chat is kept 28
+days, and the Fable models retain by default. A third claim, that nothing at all is retained
+in-IDE, could not be confirmed first-party and is deliberately absent rather than flagged.</p>
+
+<p><b>Shelf life.</b> Verified 2026-09-03. The Fabric Notebook custom agent is in preview. The
+zero-retention exemption for Fable models is explicitly time-boxed to the end of 2026. Copilot
+pricing and credit allowances changed at least once during 2026. Re-check any status claim
+before relying on it.</p>
+
+<p><b>Companion.</b> <a href="../">Code, Cowork, and Fabric</a> — Claude Code versus Claude
+Cowork on cost, retention and governance, plus the two routes into Fabric.</p>
+
+<p><b>The organisation is invented.</b> No real organisation, person, workspace or object name
+appears anywhere on this page. Not affiliated with, endorsed by, or reviewed by GitHub,
+Microsoft or Anthropic.</p>
+</footer>
+
+</div>
+
+</body>
+</html>
